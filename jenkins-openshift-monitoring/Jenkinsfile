@@ -1,99 +1,91 @@
 pipeline {
-  agent { label 'openshift-cli' }
-
-  parameters {
-    choice(name: 'ACTION', choices: ['deploy', 'dashboards', 'remove'], description: 'Operation to execute')
-    choice(name: 'ENVIRONMENT', choices: ['dev', 'tst', 'stg', 'pro'], description: 'Target environment')
-  }
-
-  options {
-    ansiColor('xterm')
-    timestamps()
-    disableConcurrentBuilds()
-    skipDefaultCheckout(true)
-    timeout(time: 30, unit: 'MINUTES')
-  }
-
-  environment {
-    OPENSHIFT_CREDENTIALS = 'openshift-api-token'
-    GRAFANA_CREDENTIALS = 'grafana-admin'
-    KUSTOMIZE_DIR = 'openshift/overlays'
-  }
-
-  stages {
-    stage('Checkout') {
-      steps { checkout scm }
+    agent {
+        label 'openshift-agent'
     }
 
-    stage('Validate repository') {
-      steps {
-        sh 'scripts/validate.sh "${ENVIRONMENT}"'
-      }
+    parameters {
+        choice(
+            name: 'ENVIRONMENT',
+            choices: ['dev', 'tst', 'acc', 'prod'],
+            description: 'Environment'
+        )
+
+        choice(
+            name: 'ACTION',
+            choices: ['deploy', 'dashboards', 'remove'],
+            description: 'Action'
+        )
     }
 
-    stage('Production approval') {
-      when {
-        allOf {
-          expression { params.ENVIRONMENT == 'pro' }
-          expression { params.ACTION != 'dashboards' }
+    environment {
+        OPENSHIFT_API_URL = credentials('openshift-api-url')
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
         }
-      }
-      input {
-        message "Confirm ${ACTION} in production"
-        ok 'Continuar'
-      }
-      steps { echo 'Aprobación registrada' }
-    }
 
-    stage('OpenShift login and preflight') {
-      steps {
-        withCredentials([
-          string(credentialsId: env.OPENSHIFT_CREDENTIALS, variable: 'OPENSHIFT_TOKEN')
-        ]) {
-          sh '''
-            set -euo pipefail
-            test -n "${OPENSHIFT_API_URL:-}" || { echo "Falta OPENSHIFT_API_URL" >&2; exit 1; }
-            oc login "${OPENSHIFT_API_URL}" --token="${OPENSHIFT_TOKEN}"
-            scripts/preflight.sh "${ENVIRONMENT}" "${ACTION}"
-          '''
+        stage('Login OpenShift') {
+            steps {
+                withCredentials([
+                    string(
+                        credentialsId: 'openshift-service-account-token',
+                        variable: 'OPENSHIFT_TOKEN'
+                    )
+                ]) {
+                    sh '''
+                        set -euo pipefail
+
+                        oc login "${OPENSHIFT_API_URL}" \
+                          --token="${OPENSHIFT_TOKEN}"
+                    '''
+                }
+            }
         }
-      }
-    }
 
-    stage('Deploy') {
-      when { expression { params.ACTION == 'deploy' } }
-      steps {
-        withCredentials([
-          usernamePassword(
-            credentialsId: env.GRAFANA_CREDENTIALS,
-            usernameVariable: 'GRAFANA_ADMIN_USER',
-            passwordVariable: 'GRAFANA_ADMIN_PASSWORD'
-          )
-        ]) {
-          sh 'scripts/deploy.sh "${ENVIRONMENT}"'
+        stage('Deploy') {
+            when {
+                expression {
+                    params.ACTION == 'deploy'
+                }
+            }
+
+            steps {
+                sh 'scripts/deploy.sh "${ENVIRONMENT}"'
+            }
         }
-      }
+
+        stage('Deploy dashboards') {
+            when {
+                expression {
+                    params.ACTION == 'dashboards'
+                }
+            }
+
+            steps {
+                sh 'scripts/deploy-dashboards.sh "${ENVIRONMENT}"'
+            }
+        }
+
+        stage('Remove') {
+            when {
+                expression {
+                    params.ACTION == 'remove'
+                }
+            }
+
+            steps {
+                sh 'scripts/remove.sh "${ENVIRONMENT}"'
+            }
+        }
     }
 
-    stage('Deploy dashboards') {
-      when { expression { params.ACTION == 'dashboards' } }
-      steps {
-        sh 'scripts/deploy-dashboards.sh "${ENVIRONMENT}"'
-      }
+    post {
+        always {
+            sh 'oc logout || true'
+        }
     }
-
-    stage('Remove') {
-      when { expression { params.ACTION == 'remove' } }
-      steps {
-        sh 'scripts/remove.sh "${ENVIRONMENT}"'
-      }
-    }
-  }
-
-  post {
-    always {
-      sh 'oc logout >/dev/null 2>&1 || true'
-      deleteDir()
-    }
-  }
 }
