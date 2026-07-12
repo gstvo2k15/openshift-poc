@@ -2,8 +2,8 @@ pipeline {
   agent { label 'openshift-cli' }
 
   parameters {
-    choice(name: 'ACTION', choices: ['deploy', 'dashboards', 'remove'], description: 'Operación a ejecutar')
-    choice(name: 'ENVIRONMENT', choices: ['dev', 'tst', 'acc', 'prod'], description: 'Entorno de destino')
+    choice(name: 'ACTION', choices: ['deploy', 'dashboards', 'remove'], description: 'Operation to execute')
+    choice(name: 'ENVIRONMENT', choices: ['dev', 'tst', 'stg', 'pro'], description: 'Target environment')
   }
 
   options {
@@ -34,12 +34,12 @@ pipeline {
     stage('Production approval') {
       when {
         allOf {
-          expression { params.ENVIRONMENT == 'prod' }
+          expression { params.ENVIRONMENT == 'pro' }
           expression { params.ACTION != 'dashboards' }
         }
       }
       input {
-        message "Confirmar ${ACTION} en producción"
+        message "Confirm ${ACTION} in production"
         ok 'Continuar'
       }
       steps { echo 'Aprobación registrada' }

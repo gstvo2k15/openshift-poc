@@ -25,8 +25,8 @@ No existe una garantía técnica del 100 % sin ejecutar contra el clúster real.
 │   └── overlays
 │       ├── dev
 │       ├── tst
-│       ├── acc
-│       └── prod
+│       ├── stg
+│       └── pro
 └── scripts
     ├── validate.sh
     ├── preflight.sh

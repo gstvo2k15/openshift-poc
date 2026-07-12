@@ -6,7 +6,7 @@ ENVIRONMENT="${1:?Usage: validate.sh <environment>}"
 
 
 case "$ENVIRONMENT" in
-    dev|tst|acc|prod)
+    dev|tst|stg|pro)
         ;;
     *)
         echo "Invalid environment" >&2

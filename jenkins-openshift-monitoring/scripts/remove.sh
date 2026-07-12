@@ -7,7 +7,7 @@ NAMESPACE="monitoring-${ENVIRONMENT}"
 
 
 case "$NAMESPACE" in
-    monitoring-dev|monitoring-tst|monitoring-acc|monitoring-prod)
+    monitoring-dev|monitoring-tst|monitoring-stg|monitoring-pro)
         ;;
     *)
         echo "Namespace not allowed" >&2
