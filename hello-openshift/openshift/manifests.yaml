@@ -1,0 +1,175 @@
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: hello-tomcat
+  labels:
+    app: hello-tomcat
+---
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: hello-tomcat
+  labels:
+    app: hello-tomcat
+spec:
+  runPolicy: Serial
+
+  source:
+    type: Git
+    git:
+      uri: https://github.com/TU-USUARIO/hello-openshift.git
+      ref: main
+
+  strategy:
+    type: Docker
+    dockerStrategy:
+      dockerfilePath: Dockerfile
+
+  output:
+    to:
+      kind: ImageStreamTag
+      name: hello-tomcat:latest
+
+  triggers:
+    - type: ConfigChange
+
+    - type: GitHub
+      github:
+        secretReference:
+          name: hello-tomcat-github-webhook
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: hello-tomcat-github-webhook
+  labels:
+    app: hello-tomcat
+type: Opaque
+stringData:
+  WebHookSecretKey: cambia-este-secreto-por-uno-largo
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hello-tomcat-config
+  labels:
+    app: hello-tomcat
+data:
+  APP_MESSAGE: "Hello OpenShift POC desde ConfigMap"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hello-tomcat
+  labels:
+    app: hello-tomcat
+  annotations:
+    image.openshift.io/triggers: >-
+      [{
+        "from": {
+          "kind": "ImageStreamTag",
+          "name": "hello-tomcat:latest"
+        },
+        "fieldPath": "spec.template.spec.containers[?(@.name==\"hello-tomcat\")].image"
+      }]
+spec:
+  replicas: 2
+
+  selector:
+    matchLabels:
+      app: hello-tomcat
+
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+
+  template:
+    metadata:
+      labels:
+        app: hello-tomcat
+    spec:
+      containers:
+        - name: hello-tomcat
+
+          # OpenShift sustituirá este valor mediante el trigger.
+          image: hello-tomcat:latest
+          imagePullPolicy: Always
+
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+
+          envFrom:
+            - configMapRef:
+                name: hello-tomcat-config
+
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 6
+
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 40
+            periodSeconds: 15
+            timeoutSeconds: 3
+            failureThreshold: 3
+
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 768Mi
+
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
+
+      terminationGracePeriodSeconds: 30
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hello-tomcat
+  labels:
+    app: hello-tomcat
+spec:
+  selector:
+    app: hello-tomcat
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+      protocol: TCP
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: hello-tomcat
+  labels:
+    app: hello-tomcat
+spec:
+  to:
+    kind: Service
+    name: hello-tomcat
+    weight: 100
+  port:
+    targetPort: http
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
