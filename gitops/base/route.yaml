@@ -1,7 +1,0 @@
-apiVersion: route.openshift.io/v1
-kind: Route
-metadata: {name: tomcat-demo}
-spec:
-  to: {kind: Service, name: tomcat-demo}
-  port: {targetPort: http}
-  tls: {termination: edge, insecureEdgeTerminationPolicy: Redirect}

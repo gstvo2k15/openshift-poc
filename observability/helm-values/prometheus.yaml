@@ -1,4 +1,4 @@
-# Minimal kube-prometheus-stack profile. CRDs and SCC compatibility must be checked.
+# Minimal kube-prometheus-stack profile. CRDs and Pod Security compatibility must be checked.
 grafana:
   enabled: true
   adminPassword: change-me-before-exposing

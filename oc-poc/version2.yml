@@ -15,6 +15,7 @@ spec:
         app: tomcat
     spec:
       securityContext:
+        fsGroup: 1001
         seccompProfile:
           type: RuntimeDefault
       containers:
@@ -26,10 +27,15 @@ spec:
           securityContext:
             allowPrivilegeEscalation: false
             runAsNonRoot: true
+            runAsUser: 1001
             readOnlyRootFilesystem: false
             capabilities:
               drop:
                 - ALL
+          volumeMounts:
+            - {name: temp, mountPath: /usr/local/tomcat/temp}
+            - {name: work, mountPath: /usr/local/tomcat/work}
+            - {name: logs, mountPath: /usr/local/tomcat/logs}
           resources:
             requests:
               cpu: 100m
@@ -37,6 +43,11 @@ spec:
             limits:
               cpu: 500m
               memory: 512Mi
+
+      volumes:
+        - {name: temp, emptyDir: {}}
+        - {name: work, emptyDir: {}}
+        - {name: logs, emptyDir: {}}
 
 ---
 apiVersion: v1
@@ -50,15 +61,3 @@ spec:
     - name: http
       port: 8080
       targetPort: 8080
-
----
-apiVersion: route.openshift.io/v1
-kind: Route
-metadata:
-  name: tomcat
-spec:
-  to:
-    kind: Service
-    name: tomcat
-  port:
-    targetPort: http

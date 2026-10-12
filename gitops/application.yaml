@@ -1,10 +1,10 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
-metadata: {name: devsecops-demo, namespace: openshift-gitops}
+metadata: {name: devsecops-demo, namespace: argocd}
 spec:
   project: default
   source:
-    repoURL: https://github.com/REPLACE_ME/openshift-devsecops-poc.git
+    repoURL: https://github.com/REPLACE_ME/kubernetes-devsecops-poc.git
     targetRevision: main
     path: gitops/base
   destination:

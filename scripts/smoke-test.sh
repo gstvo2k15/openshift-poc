@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
-HOST="$(oc -n devsecops-demo get route tomcat-demo -o jsonpath='{.spec.host}')"
-curl --fail --silent --show-error "https://${HOST}/" | tee /tmp/devsecops-poc-response.html | grep -F 'CI/CD working!'
-echo "Smoke test passed: https://${HOST}/"
+# Start kubectl port-forward first, or supply the URL of your optional Ingress.
+URL="${APP_URL:-http://127.0.0.1:8080}"
+RESPONSE="$(curl --fail --silent --show-error --connect-timeout 10 --max-time 30 "${URL%/}/")"
+grep -F 'CI/CD working!' <<< "$RESPONSE"
+echo "Smoke test passed: ${URL%/}/"

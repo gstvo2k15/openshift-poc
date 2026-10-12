@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+cd "$(dirname "$0")/.."
 : "${IMAGE:?Set IMAGE to the published image reference, preferably @sha256 digest}"
 python3 - "$IMAGE" <<'PYCODE'
 from pathlib import Path

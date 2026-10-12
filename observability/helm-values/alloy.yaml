@@ -1,4 +1,4 @@
-# Alloy deployment needs OpenShift SCC/RBAC permissions for pod logs.
+# Alloy deployment needs Kubernetes RBAC permissions for pod logs.
 alloy:
   configMap:
     content: |-
