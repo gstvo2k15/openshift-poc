@@ -263,3 +263,65 @@ Y despliega:
 
 `helm install tomcat-demo middleware/tomcat-sample-app -n middleware-poc`
 
+
+```bash
+┌─( root@ub24base01 ) * * * * Tue Jul 21 - 08:57:08 * * * * { ~ }
+└──┤ # docker login dhi.io
+Username: gstvo2k15
+Password:
+
+WARNING! Your credentials are stored unencrypted in '/root/.docker/config.json'.
+Configure a credential helper to remove this warning. See
+https://docs.docker.com/go/credential-store/
+
+Login Succeeded
+┌─( root@ub24base01 ) * * * * Tue Jul 21 - 08:58:34 * * * * { ~ }
+└──┤ # docker pull dhi.io/tomcat:11-jdk25
+11-jdk25: Pulling from tomcat
+81530f3599bb: Pull complete
+cbf02c2a7781: Pull complete
+2e3338de72ce: Pull complete
+aedf3966881c: Pull complete
+b6c8fa103684: Pull complete
+27d197d94dce: Pull complete
+19d88965f610: Pull complete
+f108e7401c58: Pull complete
+b192f93886a7: Pull complete
+c9e05b6817ae: Pull complete
+Digest: sha256:d774b7cce40fbc2f88aaecfcf99339739815beb09c7dee9688962686ddf2d9f2
+Status: Downloaded newer image for dhi.io/tomcat:11-jdk25
+dhi.io/tomcat:11-jdk25
+
+┌─( root@ub24base01 ) * * * * Tue Jul 21 - 08:58:53 * * * * { ~ }
+└──┤ # docker images
+                                                                                                                                                                                       i Info →   U  In Use
+IMAGE                            ID             DISK USAGE   CONTENT SIZE   EXTRA
+dhi.io/tomcat:11-jdk25           fcb8f7fe5198        255MB             0B
+football-ai-football-ai:latest   44c23be3b5f9       1.53GB             0B    U
+
+
+┌─( root@ub24base01 ) * * * * Tue Jul 21 - 08:59:47 * * * * { ~ }
+└──┤ # docker run -d --name my-tomcat -p 9090:8080 dhi.io/tomcat:11-jdk25
+459764f577f804bb296b252a8d8001a197d5076830db7d9a7151cd08f2348edb
+
+
+┌─( root@ub24base01 ) * * * * Tue Jul 21 - 09:00:37 * * * * { ~ }
+└──┤ # docker ps
+CONTAINER ID   IMAGE                     COMMAND                  CREATED         STATUS         PORTS                                         NAMES
+459764f577f8   dhi.io/tomcat:11-jdk25    "catalina.sh run"        2 seconds ago   Up 1 second    0.0.0.0:9090->8080/tcp, [::]:9090->8080/tcp   my-tomcat
+
+
+┌─( root@ub24base01 ) * * * * Tue Jul 21 - 09:00:51 * * * * { ~ }
+└──┤ # docker exec -it my-tomcat /bin/bash
+nonroot@459764f577f8:/$ cat /etc/*rele*
+NAME="Docker Hardened Images (Debian)"
+ID=debian
+VERSION_ID=13
+VERSION_CODENAME=trixie
+PRETTY_NAME="Docker Hardened Images/Debian GNU/Linux 13 (trixie)"
+HOME_URL="https://docker.com/products/hardened-images/"
+BUG_REPORT_URL="https://docker.com/support/"
+
+
+
+```
