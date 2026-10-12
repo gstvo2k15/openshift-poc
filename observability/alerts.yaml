@@ -1,0 +1,14 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: tomcat-demo-alerts
+  namespace: devsecops-demo
+spec:
+  groups:
+    - name: tomcat-demo
+      rules:
+        - alert: TomcatDeploymentUnavailable
+          expr: kube_deployment_status_replicas_available{namespace="devsecops-demo",deployment="tomcat-demo"} < 1
+          for: 2m
+          labels: {severity: critical}
+          annotations: {summary: "Tomcat deployment has no available replicas"}

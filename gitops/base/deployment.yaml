@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tomcat-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: tomcat-demo}
+  template:
+    metadata:
+      labels: {app: tomcat-demo}
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: tomcat
+          image: quay.io/REPLACE_ME/devsecops-poc:bootstrap
+          imagePullPolicy: Always
+          ports: [{name: http, containerPort: 8080}]
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: [ALL]}
+            runAsNonRoot: true
+          resources:
+            requests: {cpu: 100m, memory: 256Mi}
+            limits: {cpu: '1', memory: 768Mi}
+          readinessProbe:
+            httpGet: {path: /, port: http}
+            initialDelaySeconds: 8
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: {path: /, port: http}
+            initialDelaySeconds: 35
+            periodSeconds: 10

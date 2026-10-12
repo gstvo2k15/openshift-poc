@@ -1,0 +1,23 @@
+pipeline {
+  agent { label 'linux-container-build' }
+  options { timestamps(); disableConcurrentBuilds() }
+  environment {
+    IMAGE_REPO = 'quay.io/REPLACE_ME/devsecops-poc'
+  }
+  stages {
+    stage('Checkout') { steps { checkout scm } }
+    stage('Maven') { steps { sh 'mvn -B -f app/pom.xml clean verify' } }
+    stage('Build OCI image') { steps { sh 'podman build -t "$IMAGE_REPO:$GIT_COMMIT" .' } }
+    stage('Trivy image scan') { steps { sh 'trivy image --exit-code 1 --severity HIGH,CRITICAL "$IMAGE_REPO:$GIT_COMMIT"' } }
+    stage('Push image') {
+      steps {
+        withCredentials([usernamePassword(credentialsId: 'registry-creds', usernameVariable: 'REG_USER', passwordVariable: 'REG_PASS')]) {
+          sh 'echo "$REG_PASS" | podman login quay.io -u "$REG_USER" --password-stdin'
+          sh 'podman push "$IMAGE_REPO:$GIT_COMMIT"'
+        }
+      }
+    }
+  }
+}
+// GitOps update is deliberately separate: see scripts/update-gitops.sh.
+// Configure a Jenkins agent with Maven, Podman and Trivy; this is not an out-of-box Jenkins controller pipeline.

@@ -1,0 +1,17 @@
+---
+- name: Validate local tooling and deploy base namespaces
+  hosts: local
+  gather_facts: false
+  tasks:
+    - name: Check OpenShift authentication
+      ansible.builtin.command: oc whoami
+      changed_when: false
+    - name: Apply namespaces with Terraform
+      ansible.builtin.command: terraform apply -auto-approve -var=kubeconfig={{ lookup('env', 'KUBECONFIG') }}
+      args:
+        chdir: "{{ playbook_dir }}/../terraform"
+      register: terraform_result
+      changed_when: "'Apply complete! Resources: 0 added, 0 changed, 0 destroyed' not in terraform_result.stdout"
+    - name: Display OpenShift namespaces
+      ansible.builtin.command: oc get namespaces devsecops-demo ci-jenkins poc-observability
+      changed_when: false

@@ -1,0 +1,33 @@
+name: Security and Maven CI
+on:
+  push:
+    branches: [main]
+    paths-ignore: ['gitops/base/deployment.yaml']
+  pull_request:
+permissions: {contents: read}
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '17', cache: maven}
+      - name: Build WAR
+        run: mvn -B -f app/pom.xml clean verify
+      - name: Install Checkov
+        run: python -m pip install 'checkov==3.2.471'
+      - name: Scan IaC
+        run: |
+          checkov -d terraform --framework terraform --soft-fail
+          checkov -d gitops/base --framework kubernetes --soft-fail
+      - name: Scan source with Trivy
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln,secret,misconfig
+          severity: HIGH,CRITICAL
+          exit-code: '1'
+      - name: Upload WAR
+        uses: actions/upload-artifact@v4
+        with: {name: ROOT-war, path: app/target/ROOT.war}

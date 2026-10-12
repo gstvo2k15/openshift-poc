@@ -1,0 +1,19 @@
+# Alloy deployment needs OpenShift SCC/RBAC permissions for pod logs.
+alloy:
+  configMap:
+    content: |-
+      logging { level = "info" }
+      discovery.kubernetes "pods" { role = "pod" }
+      discovery.relabel "pod_logs" {
+        targets = discovery.kubernetes.pods.targets
+        rule { source_labels = ["__meta_kubernetes_namespace"]; regex = "devsecops-demo"; action = "keep" }
+        rule { source_labels = ["__meta_kubernetes_pod_name"]; target_label = "pod" }
+        rule { source_labels = ["__meta_kubernetes_namespace"]; target_label = "namespace" }
+      }
+      loki.source.kubernetes "pods" {
+        targets = discovery.relabel.pod_logs.output
+        forward_to = [loki.write.local.receiver]
+      }
+      loki.write "local" {
+        endpoint { url = "http://loki-gateway.poc-observability.svc.cluster.local/loki/api/v1/push" }
+      }

@@ -1,0 +1,6 @@
+app/target/
+.terraform/
+*.tfstate
+*.tfstate.*
+.env
+.idea/

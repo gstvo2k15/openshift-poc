@@ -1,0 +1,4 @@
+.git
+**/target/*
+!app/target/ROOT.war
+terraform/.terraform

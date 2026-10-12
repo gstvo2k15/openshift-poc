@@ -1,0 +1,15 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata: {name: devsecops-demo, namespace: openshift-gitops}
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/REPLACE_ME/openshift-devsecops-poc.git
+    targetRevision: main
+    path: gitops/base
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: devsecops-demo
+  syncPolicy:
+    automated: {prune: true, selfHeal: true}
+    syncOptions: [CreateNamespace=false]

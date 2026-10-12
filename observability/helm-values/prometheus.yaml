@@ -1,0 +1,13 @@
+# Minimal kube-prometheus-stack profile. CRDs and SCC compatibility must be checked.
+grafana:
+  enabled: true
+  adminPassword: change-me-before-exposing
+prometheus:
+  prometheusSpec:
+    retention: 6h
+    resources:
+      requests: {memory: 400Mi, cpu: 100m}
+alertmanager:
+  enabled: true
+  alertmanagerSpec:
+    replicas: 1
